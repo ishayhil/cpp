@@ -12,7 +12,7 @@ Fractal::Fractal(int dim)
 
 void Fractal::print()
 {
-//    _populateFractalLines();
+    populate();
     for (int i = 0; i < pow(_getTemplateSize(), dim); ++i)
     {
         std::cout << fractalLines.at(i) << std::endl;
@@ -146,4 +146,69 @@ std::vector<std::string> Vicsek::_getTemplate() const
 Fractal *Vicsek::PrevDim()
 {
     return new Vicsek(dim - 1);
+}
+
+// ********************** FractalFactory ********************** //
+std::vector<Fractal *> FractalFactory::fractals;
+
+void FractalFactory::parseCsv(std::string &path)
+{
+    std::ofstream file;
+    if (!boost::filesystem::exists(path))
+    {
+        invalidInput();
+    }
+    std::ifstream is(path);
+    typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
+    boost::char_separator<char> sep{","};
+    std::string currentLine;
+    if (file.tellp() == 0)
+    { // empty file
+        invalidInput();
+    }
+    while (getline(is, currentLine))
+    { // in line
+        tokenizer tok{currentLine, sep};
+        std::vector<std::string> tokens;
+        for (const auto &t: tok)
+        {
+            tokens.push_back(t);
+        }
+        generateFractals(tokens);
+    }
+    is.close();
+}
+
+void FractalFactory::invalidInput()
+{
+    std::cerr << INVALID_INPUT << std::endl;
+    exit(EXIT_FAILURE);
+}
+
+void FractalFactory::generateFractals(std::vector<std::string> &fractalsVector)
+{
+    if (fractalsVector.size() != 2 || !isValidVector(fractalsVector)) // if csv structure is invalid
+    {
+        invalidInput();
+    }
+    int fractalNum = std::stoi(fractalsVector[0]);
+    int dim = std::stoi(fractalsVector[1]);
+    if (fractalNum < 1 || fractalNum > 3 || dim < 1 || dim > 6) // if values are invalid
+    {
+        invalidInput();
+    }
+    switch (fractalNum)
+    {
+    case 1: FractalFactory::fractals.push_back(new SierpinskiCarpet(dim));
+        break;
+    case 2: FractalFactory::fractals.push_back(new SierpinskiTriangle(dim));
+        break;
+    default: FractalFactory::fractals.push_back(new Vicsek(dim)); // case 3
+    }
+}
+
+bool FractalFactory::isValidVector(std::vector<std::string> &v)
+{
+    return (v[1].length() == 1 && isdigit((unsigned char) v[1][0]) &&
+        v[0].length() == 1 && isdigit((unsigned char) v[0][0]));
 }

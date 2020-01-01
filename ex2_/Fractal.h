@@ -8,6 +8,13 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include "boost/tokenizer.hpp"
+//#define BOOST_NO_CXX11_SCOPED_ENUMS
+#include <boost/filesystem.hpp>
+//#undef BOOST_NO_CXX11_SCOPED_ENUMS
+
+#define INVALID_INPUT "Invalid input"
+#define INVALID_USAGE "Usage: FractalDrawer <file path>"
 
 class Fractal
 {
@@ -22,7 +29,6 @@ public:
 protected:
     int dim;
 
-//    void _populateFractalLines();
     virtual int _getTemplateSize() const = 0;
     virtual std::vector<std::string> _getTemplate() const = 0;
     virtual Fractal *PrevDim() = 0;
@@ -62,5 +68,17 @@ protected:
     Fractal *PrevDim() override;
 };
 
+class FractalFactory
+{
+public:
+    static std::vector<Fractal *> fractals;
+    static void parseCsv(std::string &path);
+private:
+    static void invalidInput();
+
+    static void generateFractals(std::vector<std::string> &fractalsVector);
+
+    static bool isValidVector(std::vector<std::string> &v);
+};
 
 #endif //FRACTAL_H
