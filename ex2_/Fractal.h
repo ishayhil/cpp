@@ -8,49 +8,58 @@
 #include <vector>
 #include <string>
 #include <iostream>
-#define BASE_CHAR "#";
 
 class Fractal
 {
 public:
     explicit Fractal(int dim);
     void print();
+    void populate();
+    std::vector<std::string> fractalLines;
+    const static char BASE_CHAR = '#';
+    const static char EMPTY_SPACE = ' ';
 
 protected:
     int dim;
-    std::vector<std::string> fractalLines;
 
-    virtual bool _canPutSymbol(int row, int col) const = 0;
-    virtual void _populateFractalLines() = 0;
+//    void _populateFractalLines();
     virtual int _getTemplateSize() const = 0;
+    virtual std::vector<std::string> _getTemplate() const = 0;
+    virtual Fractal *PrevDim() = 0;
+private:
+    void _generateRow(Fractal *prev, int len, int row, std::string &space);
 };
 
-class Sierpinski: public Fractal
-{
-public:
-    explicit Sierpinski(int dim);
-
-protected:
-    bool _canPutSymbol(int row, int col) const override;
-    void _populateFractalLines() override;
-};
-
-class SierpinskiTriangle: public Sierpinski
+class SierpinskiTriangle: public Fractal
 {
 public:
     explicit SierpinskiTriangle(int dim);
 
 protected:
     int _getTemplateSize() const override;
+    std::vector<std::string> _getTemplate() const override;
+    Fractal *PrevDim() override;
 };
 
-class SierpinskiCarpet: public Sierpinski
+class SierpinskiCarpet: public Fractal
 {
 public:
     explicit SierpinskiCarpet(int dim);
 
 protected:
     int _getTemplateSize() const override;
+    std::vector<std::string> _getTemplate() const override;
+    Fractal *PrevDim() override;
+};
+
+class Vicsek: public Fractal
+{
+public:
+    explicit Vicsek(int dim);
+protected:
+    int _getTemplateSize() const override;
+    std::vector<std::string> _getTemplate() const override;
+    Fractal *PrevDim() override;
 };
 
 
