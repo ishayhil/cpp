@@ -9,12 +9,12 @@
 #include <string>
 #include <iostream>
 #include "boost/tokenizer.hpp"
-//#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
-//#undef BOOST_NO_CXX11_SCOPED_ENUMS
 
 #define INVALID_INPUT "Invalid input"
 #define INVALID_USAGE "Usage: FractalDrawer <file path>"
+#define COMMA ','
+#define COMMA_STR ","
 
 class Fractal
 {
@@ -22,6 +22,7 @@ public:
     explicit Fractal(int dim);
     void print();
     void populate();
+    virtual ~Fractal() = default;
     std::vector<std::string> fractalLines;
     const static char BASE_CHAR = '#';
     const static char EMPTY_SPACE = ' ';
@@ -73,12 +74,14 @@ class FractalFactory
 public:
     static std::vector<Fractal *> fractals;
     static void parseCsv(std::string &path);
-private:
     static void invalidInput();
-
-    static void generateFractals(std::vector<std::string> &fractalsVector);
+    static void deleteFractals();
+private:
+    static void generateFractals(std::vector<std::string> &fractalsVector, std::ifstream &ifstream);
 
     static bool isValidVector(std::vector<std::string> &v);
+
+    static bool checkNotDupComma(std::string &string);
 };
 
 #endif //FRACTAL_H

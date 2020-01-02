@@ -12,12 +12,15 @@ Fractal::Fractal(int dim)
 
 void Fractal::print()
 {
-    populate();
-    for (int i = 0; i < pow(_getTemplateSize(), dim); ++i)
+    int len = pow(_getTemplateSize(), dim);
+    for (int i = 0; i < len; ++i)
     {
-        std::cout << fractalLines.at(i) << std::endl;
+        if (i != len - 1) {
+            std::cout << fractalLines.at(i) << std::endl;
+        } else {
+            std::cout << fractalLines.at(i);
+        }
     }
-    std::cout << std::endl;
 }
 
 void Fractal::populate()
@@ -44,6 +47,7 @@ void Fractal::populate()
     {
         _generateRow(prev, len, j, space);
     }
+    delete prev;
 }
 
 /**
@@ -153,30 +157,35 @@ std::vector<Fractal *> FractalFactory::fractals;
 
 void FractalFactory::parseCsv(std::string &path)
 {
-    std::ofstream file;
     if (!boost::filesystem::exists(path))
     {
         invalidInput();
     }
-    std::ifstream is(path);
+    std::ifstream ifstream(path);
     typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
-    boost::char_separator<char> sep{","};
+    boost::char_separator<char> sep{COMMA_STR};
     std::string currentLine;
-    if (file.tellp() == 0)
+    if (ifstream.peek() == std::ifstream::traits_type::eof())
     { // empty file
-        invalidInput();
+        ifstream.close();
+        return;
     }
-    while (getline(is, currentLine))
+    while (getline(ifstream, currentLine))
     { // in line
         tokenizer tok{currentLine, sep};
+        if (currentLine.empty() || !checkNotDupComma(currentLine)) {
+            deleteFractals();
+            ifstream.close();
+            invalidInput();
+        }
         std::vector<std::string> tokens;
         for (const auto &t: tok)
         {
             tokens.push_back(t);
         }
-        generateFractals(tokens);
+        generateFractals(tokens, ifstream);
     }
-    is.close();
+    ifstream.close();
 }
 
 void FractalFactory::invalidInput()
@@ -185,18 +194,23 @@ void FractalFactory::invalidInput()
     exit(EXIT_FAILURE);
 }
 
-void FractalFactory::generateFractals(std::vector<std::string> &fractalsVector)
+void FractalFactory::generateFractals(std::vector<std::string> &fractalsVector, std::ifstream &ifstream)
 {
     if (fractalsVector.size() != 2 || !isValidVector(fractalsVector)) // if csv structure is invalid
     {
+        deleteFractals();
+        ifstream.close();
         invalidInput();
     }
     int fractalNum = std::stoi(fractalsVector[0]);
     int dim = std::stoi(fractalsVector[1]);
     if (fractalNum < 1 || fractalNum > 3 || dim < 1 || dim > 6) // if values are invalid
     {
+        deleteFractals();
+        ifstream.close();
         invalidInput();
     }
+
     switch (fractalNum)
     {
     case 1: FractalFactory::fractals.push_back(new SierpinskiCarpet(dim));
@@ -209,6 +223,35 @@ void FractalFactory::generateFractals(std::vector<std::string> &fractalsVector)
 
 bool FractalFactory::isValidVector(std::vector<std::string> &v)
 {
-    return (v[1].length() == 1 && isdigit((unsigned char) v[1][0]) &&
-        v[0].length() == 1 && isdigit((unsigned char) v[0][0]));
+    for (std::string string: v) {
+        if (string.empty()) {
+            return false;
+        }
+        if (string[string.size() - 1] == '\r') {
+            string.erase(string.size() - 1);
+        }
+        if (string.size() != 1 || !isdigit((unsigned char) string[0])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool FractalFactory::checkNotDupComma(std::string &string) {
+    if (string.size() == 1) {
+        return true;
+    }
+    for (int i = 0; i < (int) string.size() - 1; ++i) {
+        if (string[i] == COMMA && string[i + 1] == COMMA) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void FractalFactory::deleteFractals()
+{
+    for (Fractal* fractal: FractalFactory::fractals) {
+        delete fractal;
+    }
 }
