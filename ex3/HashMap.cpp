@@ -36,25 +36,19 @@ int main()
 //    cout << h2.size() << endl;
 //    cout << h2.capacity() << endl;
 
-    for (int i = 0; i < 150; ++i)
+    for (int i = 0; i < 2; ++i)
     {
         h1.insert("ishay_" + std::to_string(i), i);
-//        h2.insert("ishay_" + std::to_string(i), i);
     }
 
-    int cnt = 0;
-//    for (HashMap<string, double>::Iterator tup = h1.begin(); tup != h1.end(); tup++)
-//    {
-//        cout << tup->first << " " << tup->second << endl;
-//        cnt++;
-//    }
+    cout << h1.size() << endl;
 
-    for (auto &tup: h1) {
-        cout << tup.first << " " << tup.second << endl;
-        cnt++;
+    for (auto &tup: h1)
+    {
+        h1.erase(tup.first);
     }
 
-    cout << cnt << endl;
+    cout << h1.size() << endl;
 
 //    auto a = h1.begin();
 //    cout << a->first << " " << a->second << endl;
@@ -103,5 +97,6 @@ int main()
 //    cout << h1.at("ishay") << endl;
 //    cout << h1["mor"] << endl;
 //    std::cout << "hi";
-    return 1;
+        return 1;
+
 }

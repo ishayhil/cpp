@@ -29,6 +29,7 @@ private:
     static const int _BASE_CAPACITY = 16;
 
     list<DictPair> *_map;
+    list<DictPair> *_mapCopy;
     list<DictPair> *_bucket(const KeyT key)
     {
         return &(_map[bucketIndex(key)]);
@@ -122,6 +123,7 @@ public:
         : _size(0), _capacity(_BASE_CAPACITY)
     {
         _map = new list<DictPair>[_capacity];
+        _mapCopy = new list<DictPair>[_capacity];
     }
 
     HashMap(const HashMap &other)
@@ -146,6 +148,7 @@ public:
     ~HashMap()
     {
         delete[] _map;
+        delete[] _mapCopy;
         _map = nullptr;
     }
 
@@ -170,7 +173,7 @@ public:
         return _capacity == 0;
     }
 
-    bool insert(const KeyT key, const ValueT val) // todo why would not it work?
+    bool insert(const KeyT key, const ValueT val)
     {
         if (containsKey(key))
         {
@@ -317,18 +320,20 @@ public:
 
     Iterator begin()
     {
+        delete[] _mapCopy;
         int ind = 0;
+        _mapCopy = _copyMap(*this);
         while (_map[ind].size() == 0)
         {
             ind++;
         }
-        return Iterator(_map, _capacity, ind);
+        return Iterator(_mapCopy, _capacity, ind);
     }
 
     Iterator end()
     {
-        auto itr = Iterator(_map, _capacity, _capacity - 1);
-        for (size_t i = 0; i < _map[_capacity - 1].size(); ++i)
+        auto itr = Iterator(_mapCopy, _capacity, _capacity - 1);
+        for (size_t i = 0; i < _mapCopy[_capacity - 1].size(); ++i)
         {
             itr.itr++;
         }
@@ -341,11 +346,11 @@ public:
     {
     public:
         list<DictPair> *map;
-        int capacity;
+        int &capacity;
         int ind;
         list<DictPair> *bucket;
         typename list<DictPair>::iterator itr;
-        explicit Iterator(list<DictPair> *map, int capacity, int ind)
+        explicit Iterator(list<DictPair> *map, int &capacity, int ind)
             : map(map), capacity(capacity), ind(ind), bucket(&(map[ind])), itr(bucket->begin())
         {}
 
@@ -361,19 +366,9 @@ public:
 
         const Iterator &operator++()
         {
-            itr++;
-            if (itr == bucket->end())
+            if (itr == bucket->end() || ++itr == bucket->end()) // if deleted, can reach end before ++
             {
-                if (ind != capacity - 1)
-                {
-                    ind++; // finds next bucket with elements
-                    while (map[ind].size() == 0 && ind < capacity - 1)
-                    {
-                        ind++;
-                    }
-                    bucket = &(map[ind]);
-                    itr = bucket->begin();
-                }
+                _handleIncrease();
             }
             return *this;
         }
@@ -382,18 +377,9 @@ public:
         {
             auto old = this;
             itr++;
-            if (itr == bucket->end())
+            if (itr == bucket->end() || ++itr == bucket->end()) // if deleted, can reach end before ++
             {
-                if (ind != capacity - 1)
-                {
-                    ind++; // finds next bucket with elements
-                    while (map[ind].size() == 0 && ind < capacity - 1)
-                    {
-                        ind++;
-                    }
-                    bucket = &(map[ind]);
-                    itr = bucket->begin();
-                }
+                _handleIncrease();
             }
             return *old;
         }
@@ -401,6 +387,21 @@ public:
         bool operator!=(const Iterator &other) const
         {
             return itr != other.itr;
+        }
+
+    private:
+        void _handleIncrease()
+        {
+            if (ind != capacity - 1)
+            {
+                ind++; // finds next bucket with elements
+                while (map[ind].size() == 0 && ind < capacity - 1)
+                {
+                    ind++;
+                }
+                bucket = &(map[ind]);
+                itr = bucket->begin();
+            }
         }
     };
 
