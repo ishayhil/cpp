@@ -17,7 +17,7 @@ using std::string;
 using std::endl;
 
 
-bool validScore(string score)
+bool validStrInt(string score)
 {
     if (score[score.size() - 1] == '\r')
     {
@@ -35,7 +35,7 @@ bool validScore(string score)
 
 bool validVector(vector<string> &v)
 {
-    if (v.size() != 2 || v[0].empty() || v[1].empty() || !validScore(v[1]))
+    if (v.size() != 2 || v[0].empty() || v[1].empty() || !validStrInt(v[1]))
     {
         return false;
     }
@@ -92,7 +92,7 @@ void parseCsv(std::string &path, HashMap<string, int> &map)
     ifstream.close();
 }
 
-int calculateStrInStr(string &str, string &substring)
+int cntSubstr(const string &str, const string &substring)
 {
     int cnt = 0;
     string::size_type pos = 0;
@@ -104,52 +104,71 @@ int calculateStrInStr(string &str, string &substring)
     return cnt;
 }
 
+string extractInput(int ind, char *args[])
+{
+    string str;
+    for (size_t i = 0; i < strlen(args[ind]); ++i)
+    {
+        str += args[ind][i];
+    }
+    return str;
+}
+
 int calculateTextScore(string &path, HashMap<string, int> &map)
 {
     std::ifstream ifstream(path);
-    typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
-    boost::char_separator<char> sep{" "};
-    std::string currentLine;
-
     if (ifstream.peek() == std::ifstream::traits_type::eof())
     { // empty file
         ifstream.close();
         return 0;
     }
-    tokenizer tok{ifstream, sep};
-    for (const auto &t: tok)
+    char c;
+    string str;
+    while (ifstream >> c)
     {
-
+        str += c;
+    }
+    int sum = 0;
+    for (auto &tuple: map)
+    {
+        int cnt = cntSubstr(str, tuple.first);
+        sum += (cnt * tuple.second);
     }
     ifstream.close();
-
+    return sum;
 }
 
 int main(int argc, char *args[])
 {
-    if (argc != 2) // todo change it
+    if (argc != 4)
     {
         std::cout << USAGE << std::endl;
         exit(EXIT_FAILURE);
     }
-    string csvPath;
-    string textPath;
-    for (size_t i = 0; i < strlen(args[1]); ++i)
+    string strThreshold = extractInput(3, args);
+    if (!validStrInt(strThreshold))
     {
-        csvPath += args[1][i];
+        std::cout << "Invalid input" << std::endl;
+        exit(EXIT_FAILURE);
     }
-    for (size_t i = 0; i < strlen(args[2]); ++i)
+    int threshold = std::stoi(strThreshold);
+    if (threshold <= 0)
     {
-        textPath += args[2][i];
+        std::cout << "Invalid input" << std::endl;
+        exit(EXIT_FAILURE);
     }
+    string csvPath = extractInput(1, args);
+    string textPath = extractInput(2, args);
+
     HashMap<string, int> map;
     parseCsv(csvPath, map);
-
-
-    for (auto &t: map)
+    if (calculateTextScore(textPath, map) >= threshold)
     {
-        cout << t.first << ": " << t.second << endl;
+        cout << "SPAM";
     }
-
+    else
+    {
+        cout << "NOT_SPAM";
+    }
     return EXIT_SUCCESS;
 }
