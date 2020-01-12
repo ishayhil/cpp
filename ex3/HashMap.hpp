@@ -349,25 +349,25 @@ public:
             : map(map), capacity(capacity), ind(ind), bucket(&(map[ind])), itr(bucket->begin())
         {}
 
-        DictPair &operator*() const
+        const DictPair &operator*() const
         {
             return *itr;
         }
 
-        DictPair *operator->() const
+        const DictPair *operator->() const
         {
             return &(*itr);
         }
 
-        Iterator &operator++()
+        const Iterator &operator++()
         {
             itr++;
             if (itr == bucket->end())
             {
                 if (ind != capacity - 1)
                 {
-                    ind++;
-                    while (map[ind].size() == 0 && ind < capacity)
+                    ind++; // finds next bucket with elements
+                    while (map[ind].size() == 0 && ind < capacity - 1)
                     {
                         ind++;
                     }
@@ -378,7 +378,7 @@ public:
             return *this;
         }
 
-        Iterator &operator++(int)
+        const Iterator &operator++(int)
         {
             auto old = this;
             itr++;
@@ -386,7 +386,7 @@ public:
             {
                 if (ind != capacity - 1)
                 {
-                    ind++;
+                    ind++; // finds next bucket with elements
                     while (map[ind].size() == 0 && ind < capacity - 1)
                     {
                         ind++;
@@ -398,12 +398,7 @@ public:
             return *old;
         }
 
-//        bool operator==(Iterator &other)
-//        {
-//            return this->itr == other.itr;
-//        }
-
-        bool operator!=(const Iterator &other)
+        bool operator!=(const Iterator &other) const
         {
             return itr != other.itr;
         }
