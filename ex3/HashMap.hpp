@@ -7,11 +7,13 @@
 
 #include <list>
 #include <string>
+#include <vector>
 #include <csignal>
 #include <iostream>
 
 using std::list;
 using std::pair;
+using std::vector;
 
 template<typename KeyT, typename ValueT>
 class HashMap
@@ -20,7 +22,6 @@ private:
     typedef pair<KeyT, ValueT> DictPair;
     int _size;
     int _capacity;
-    ValueT _undefined_val = ValueT();
     const double _LOWER_LOAD_FACTOR = 1.0 / 4;
     const double _UPPER_LOAD_FACTOR = 3.0 / 4;
     const double _INCREASE_FACTOR = 2;
@@ -72,7 +73,8 @@ private:
         int old_capacity = _capacity;
         for (int i = 0; i < _capacity; ++i)
         {
-            old[i] = _map[i];
+            auto &bucket = _map[i];
+            old[i] = bucket; // copy by reference
         }
         delete[] _map;
         _capacity *= factor;
@@ -88,6 +90,19 @@ private:
         delete[] old;
     }
 
+    list<DictPair> *_copyMap(const HashMap &other) const
+    { // allocates heap memory!
+        auto newMap = new list<DictPair>[other.capacity()];
+        for (int i = 0; i < capacity(); i++)
+        {
+            for (auto &tuple: other._map[i])
+            {
+                newMap[i].push_back(DictPair(tuple.first, tuple.second));
+            }
+        }
+        return newMap;
+    }
+
     struct KeyEquals
     {
         KeyT key;
@@ -101,10 +116,31 @@ private:
     };
 
 public:
+    class Iterator;
+
     HashMap()
         : _size(0), _capacity(_BASE_CAPACITY)
     {
         _map = new list<DictPair>[_capacity];
+    }
+
+    HashMap(const HashMap &other)
+        : _capacity(other.capacity()), _size(other.size())
+    {
+        _map = _copyMap(other);
+    }
+
+    HashMap(const vector<KeyT> keyV, const vector<ValueT> valV)
+        : HashMap()
+    {
+        if (keyV.size() != valV.size())
+        {
+            throw std::out_of_range("key vector size != val vector size!");
+        }
+        for (size_t i = 0; i < keyV.size(); ++i)
+        {
+            (*this)[keyV[i]] = valV[i]; // will override if exists and add a new one if not.
+        }
     }
 
     ~HashMap()
@@ -141,7 +177,7 @@ public:
             return false;
         }
         list<DictPair> *bucket = _bucket(key);
-        bucket->push_back(pair<KeyT, ValueT>(key, val));
+        bucket->push_back(DictPair(key, val));
         _size++;
         if (getLoadFactor() > _UPPER_LOAD_FACTOR)
         {
@@ -196,7 +232,8 @@ public:
         DictPair *tuple = _tuplePointer(key);
         if (tuple == nullptr)
         {
-            return _undefined_val;
+            insert(key, ValueT());
+            return at(key);
         }
         else
         {
@@ -209,12 +246,50 @@ public:
         DictPair *tuple = _tuplePointer(key);
         if (tuple == nullptr)
         {
-            return _undefined_val;
+            insert(key, ValueT());
+            return at(key);
         }
         else
         {
             return tuple->second;
         }
+    }
+
+    HashMap &operator=(const HashMap &other)
+    {
+        if (this == &other)
+        {
+            return *this;
+        }
+        _capacity = other.capacity();
+        _size = other.size();
+        delete[] _map;
+        _map = _copyMap(other);
+    }
+
+    bool operator==(const HashMap &other) const
+    {
+        if (_size != other.size())
+        {
+            return false;
+        }
+        for (int i = 0; i < _capacity; ++i)
+        {
+            for (auto &tuple: _map[i])
+            {
+                auto otherTuple = other._tuplePointer(tuple.first);
+                if (otherTuple == nullptr || otherTuple->second != tuple.second)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    bool operator!=(const HashMap &other) const
+    {
+        return !((*this) == other);
     }
 
     bool erase(const KeyT key)
@@ -223,15 +298,116 @@ public:
         {
             return false;
         }
-        KeyEquals keyEquals(key);
         list<DictPair> *bucket = _bucket(key);
-        bucket->remove_if(keyEquals);
+        bucket->remove_if(KeyEquals(key));
         _size--;
-        if (getLoadFactor() < _LOWER_LOAD_FACTOR && _capacity >= 2)
+        if (getLoadFactor() < _LOWER_LOAD_FACTOR && _capacity >= 2) // no need to rehash if capacity is 1
         {
             _rehash(_DECREASE_FACTOR);
         }
         return true;
     }
+
+    void clear()
+    {
+        delete[] _map;
+        _map = new list<DictPair>[_capacity];
+        _size = 0;
+    }
+
+    Iterator begin()
+    {
+        int ind = 0;
+        while (_map[ind].size() == 0)
+        {
+            ind++;
+        }
+        return Iterator(_map, _capacity, ind);
+    }
+
+    Iterator end()
+    {
+        auto itr = Iterator(_map, _capacity, _capacity - 1);
+        for (size_t i = 0; i < _map[_capacity - 1].size(); ++i)
+        {
+            itr.itr++;
+        }
+        return itr;
+    }
+
+
+public:
+    class Iterator
+    {
+    public:
+        list<DictPair> *map;
+        int capacity;
+        int ind;
+        list<DictPair> *bucket;
+        typename list<DictPair>::iterator itr;
+        explicit Iterator(list<DictPair> *map, int capacity, int ind)
+            : map(map), capacity(capacity), ind(ind), bucket(&(map[ind])), itr(bucket->begin())
+        {}
+
+        DictPair &operator*() const
+        {
+            return *itr;
+        }
+
+        DictPair *operator->() const
+        {
+            return &(*itr);
+        }
+
+        Iterator &operator++()
+        {
+            itr++;
+            if (itr == bucket->end())
+            {
+                if (ind != capacity - 1)
+                {
+                    ind++;
+                    while (map[ind].size() == 0 && ind < capacity)
+                    {
+                        ind++;
+                    }
+                    bucket = &(map[ind]);
+                    itr = bucket->begin();
+                }
+            }
+            return *this;
+        }
+
+        Iterator &operator++(int)
+        {
+            auto old = this;
+            itr++;
+            if (itr == bucket->end())
+            {
+                if (ind != capacity - 1)
+                {
+                    ind++;
+                    while (map[ind].size() == 0 && ind < capacity - 1)
+                    {
+                        ind++;
+                    }
+                    bucket = &(map[ind]);
+                    itr = bucket->begin();
+                }
+            }
+            return *old;
+        }
+
+//        bool operator==(Iterator &other)
+//        {
+//            return this->itr == other.itr;
+//        }
+
+        bool operator!=(const Iterator &other)
+        {
+            return itr != other.itr;
+        }
+    };
+
 };
 #endif //HASHMAP_HPP
