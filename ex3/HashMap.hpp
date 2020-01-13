@@ -394,7 +394,7 @@ public:
         {
             if (ind != capacity - 1)
             {
-                ind++; // finds next bucket with elements
+                ind++; // finds next bucket with elements. if reach end, then that is the hashmap.end().
                 while (map[ind].size() == 0 && ind < capacity - 1)
                 {
                     ind++;

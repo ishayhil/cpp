@@ -5,10 +5,12 @@
 #include <vector>
 #include <iostream>
 #include <string>
+#include <sstream>
 #include "HashMap.hpp"
 #include "boost/filesystem.hpp"
 #include "boost/tokenizer.hpp"
 #define COMMA_STR ","
+#define SPACE ' '
 #define USAGE "Usage:  SpamDetector <database path> <message path> <threshold>"
 
 using std::vector;
@@ -41,6 +43,14 @@ bool validVector(vector<string> &v)
     }
     int score = std::stoi(v[1]);
     return 0 <= score;
+}
+
+void lower(string &str)
+{
+    for (auto &c: str)
+    {
+        c = (char) tolower(c);
+    }
 }
 
 void parseCsv(std::string &path, HashMap<string, int> &map)
@@ -85,6 +95,7 @@ void parseCsv(std::string &path, HashMap<string, int> &map)
         else
         {
             string phrase = tokens[0];
+            lower(phrase);
             int score = std::stoi(tokens[1]);
             map[phrase] = score;
         }
@@ -123,15 +134,29 @@ int calculateTextScore(string &path, HashMap<string, int> &map)
         return 0;
     }
     char c;
-    string str;
-    while (ifstream >> c)
+    std::stringstream strStream;
+
+    while (ifstream.peek() != EOF)
     {
-        str += c;
+        c = (char) ifstream.get();
+        if (c != '\n' && c != '\r')
+        {
+            strStream << (char) tolower(c);
+        }
+        else if (c == '\n')
+        {
+            strStream << SPACE;
+        }
     }
+
+    string str = strStream.str();
+//    cout << str << endl;
+
     int sum = 0;
     for (auto &tuple: map)
     {
         int cnt = cntSubstr(str, tuple.first);
+//        cout << tuple.first << ", " << cnt << endl;
         sum += (cnt * tuple.second);
     }
     ifstream.close();
@@ -162,7 +187,8 @@ int main(int argc, char *args[])
 
     HashMap<string, int> map;
     parseCsv(csvPath, map);
-    if (calculateTextScore(textPath, map) >= threshold)
+    int score = calculateTextScore(textPath, map);
+    if (score >= threshold)
     {
         cout << "SPAM";
     }
@@ -170,5 +196,6 @@ int main(int argc, char *args[])
     {
         cout << "NOT_SPAM";
     }
+//    cout << endl << score;
     return EXIT_SUCCESS;
 }
