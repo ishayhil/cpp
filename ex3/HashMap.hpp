@@ -10,6 +10,8 @@
 #include <vector>
 #include <csignal>
 #include <iostream>
+#define KEY_NOT_FOUND "Key not found!"
+#define INVALID_VECTORS_SIZE "key vector size != val vector size!"
 
 using std::list;
 using std::pair;
@@ -137,7 +139,7 @@ public:
     {
         if (keyV.size() != valV.size())
         {
-            throw std::out_of_range("key vector size != val vector size!");
+            throw std::out_of_range(INVALID_VECTORS_SIZE);
         }
         for (size_t i = 0; i < keyV.size(); ++i)
         {
@@ -209,7 +211,7 @@ public:
         DictPair *tuple = _tuplePointer(key);
         if (tuple == nullptr)
         {
-            throw std::out_of_range("key not found!");
+            throw std::out_of_range(KEY_NOT_FOUND);
         }
         else
         {
@@ -222,7 +224,7 @@ public:
         DictPair *tuple = _tuplePointer(key);
         if (tuple == nullptr)
         {
-            throw std::out_of_range("key not found!");
+            throw std::out_of_range(KEY_NOT_FOUND);
         }
         else
         {
@@ -323,7 +325,7 @@ public:
         delete[] _mapCopy;
         int ind = 0;
         _mapCopy = _copyMap(*this);
-        while (_map[ind].size() == 0)
+        while (_map[ind].size() == 0) // find first non empty bucket
         {
             ind++;
         }
@@ -404,6 +406,5 @@ public:
             }
         }
     };
-
 };
 #endif //HASHMAP_HPP
