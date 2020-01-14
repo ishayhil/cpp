@@ -12,6 +12,8 @@
 #define COMMA_STR ","
 #define SPACE ' '
 #define USAGE "Usage:  SpamDetector <database path> <message path> <threshold>"
+#define SPAM "SPAM"
+#define NOT_SPAM "NOT_SPAM"
 
 using std::vector;
 using std::cout;
@@ -186,16 +188,16 @@ int main(int argc, char *args[])
     string textPath = extractInput(2, args);
 
     HashMap<string, int> map;
+    HashMap<string, int> map2;
     parseCsv(csvPath, map);
     int score = calculateTextScore(textPath, map);
     if (score >= threshold)
     {
-        cout << "SPAM";
+        cout << SPAM;
     }
     else
     {
-        cout << "NOT_SPAM";
+        cout << NOT_SPAM;
     }
-//    cout << endl << score;
     return EXIT_SUCCESS;
 }

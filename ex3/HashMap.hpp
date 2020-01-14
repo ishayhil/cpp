@@ -89,7 +89,7 @@ private:
      */
     list<DictPair> *_bucket(const KeyT key)
     {
-        return &(_map[bucketIndex(key)]);
+        return &(_map[_bucketIndex(key)]);
     }
 
     /**
@@ -98,7 +98,7 @@ private:
      */
     list<DictPair> *_bucket(const KeyT key) const
     {
-        return &(_map[bucketIndex(key)]);
+        return &(_map[_bucketIndex(key)]);
     }
 
     /**
@@ -174,7 +174,7 @@ private:
     list<DictPair> *_copyMap(const HashMap &other) const
     { // allocates heap memory!
         auto newMap = new list<DictPair>[other.capacity()];
-        for (int i = 0; i < capacity(); i++)
+        for (int i = 0; i < other.capacity(); i++)
         {
             for (auto &tuple: other._map[i])
             {
@@ -211,6 +211,12 @@ private:
         }
     };
 
+    int _bucketIndex(const KeyT key) const noexcept
+    {
+        int hash = std::hash<KeyT>{}(key);
+        return hash & (_capacity - 1);
+    }
+
 public:
     /**
      * Declaring the Iterator class of HashMap.
@@ -232,10 +238,23 @@ public:
      * @param other HashMap
      */
     HashMap(const HashMap &other)
-        : _capacity(other.capacity()), _size(other.size())
     {
         _map = _copyMap(other);
         _mapCopy = _copyMap(other);
+        _capacity = other.capacity();
+        _size = other.size();
+    }
+
+    /**
+     * move constructor
+     * @param other HashMap
+     */
+    HashMap(const HashMap &&other) noexcept
+    {
+        _map = _copyMap(other);
+        _mapCopy = _copyMap(other);
+        _capacity = other.capacity();
+        _size = other.size();
     }
 
     /**
@@ -270,12 +289,15 @@ public:
 
     /**
      * @param key
-     * @return index of the bucket that should hold the key.
+     * @return index of the bucket that holds the key.
      */
     int bucketIndex(const KeyT key) const
     {
-        int hash = std::hash<KeyT>{}(key);
-        return hash & (_capacity - 1);
+        if (!containsKey(key))
+        {
+            throw std::out_of_range(KEY_NOT_FOUND);
+        }
+        return _bucketIndex(key);
     }
 
     /**
@@ -299,7 +321,7 @@ public:
      */
     bool empty() const
     {
-        return _capacity == 0;
+        return _size == 0;
     }
 
     /**
@@ -331,6 +353,11 @@ public:
 
     int bucketSize(const KeyT key) const
     {
+        auto bucket = _bucket(key);
+        if (!containsKey(key))
+        {
+            throw std::out_of_range(KEY_NOT_FOUND);
+        }
         return _bucket(key)->size();
     }
 
@@ -393,16 +420,13 @@ public:
         }
     }
 
-    HashMap &operator=(const HashMap &other)
+    HashMap &operator=(const HashMap other)
     {
-        if (this == &other)
-        {
-            return *this;
-        }
-        _capacity = other.capacity();
-        _size = other.size();
         delete[] _map;
         _map = _copyMap(other);
+        _capacity = other.capacity();
+        _size = other.size();
+        return *this;
     }
 
     bool operator==(const HashMap &other) const
@@ -453,19 +477,19 @@ public:
         _size = 0;
     }
 
-    Iterator begin()
+    Iterator cbegin()
     {
         delete[] _mapCopy;
         int ind = 0;
         _mapCopy = _copyMap(*this);
-        while (_map[ind].size() == 0) // find first non empty bucket
+        while (_map[ind].size() == 0 && ind < _capacity - 1) // find first non empty bucket
         {
             ind++;
         }
         return Iterator(_mapCopy, _capacity, ind);
     }
 
-    Iterator end()
+    Iterator cend()
     {
         auto itr = Iterator(_mapCopy, _capacity, _capacity - 1);
         for (size_t i = 0; i < _mapCopy[_capacity - 1].size(); ++i)
