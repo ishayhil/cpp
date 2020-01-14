@@ -10,38 +10,102 @@
 #include <vector>
 #include <csignal>
 #include <iostream>
+/**
+ * key not found msg
+ */
 #define KEY_NOT_FOUND "Key not found!"
+
+/**
+ * invalid vector size for hashmap 2 vectors constructor msg
+ */
 #define INVALID_VECTORS_SIZE "key vector size != val vector size!"
 
 using std::list;
 using std::pair;
 using std::vector;
 
+/**
+ * HashMap class implements a generic Hash Map data structure. lower load factor = 1/4, upper load factor = 3/4.
+ * @tparam KeyT type of the keys
+ * @tparam ValueT type of the values
+ */
 template<typename KeyT, typename ValueT>
 class HashMap
 {
 private:
+    /**
+     * declaring the DictPair type
+     */
     typedef pair<KeyT, ValueT> DictPair;
+
+    /**
+     * amount of elements currently in hash map
+     */
     int _size;
+
+    /**
+     * amount of buckets in the hash map
+     */
     int _capacity;
+
+    /**
+     * lower load factor
+     */
     const double _LOWER_LOAD_FACTOR = 1.0 / 4;
+
+    /**
+     * upper load factor
+     */
     const double _UPPER_LOAD_FACTOR = 3.0 / 4;
+
+    /**
+     * bucket amount increase factor
+     */
     const double _INCREASE_FACTOR = 2;
+
+    /**
+     * bucket amount decrease factor
+     */
     const double _DECREASE_FACTOR = 1.0 / 2;
+
+    /**
+     * initial bucket amount
+     */
     static const int _BASE_CAPACITY = 16;
 
+    /**
+     * the buckets container. Array of linked list.
+     */
     list<DictPair> *_map;
+
+    /**
+     * a copy of _map field
+     */
     list<DictPair> *_mapCopy;
+
+    /**
+     * @param key
+     * @return the bucket the current key will be in.
+     */
     list<DictPair> *_bucket(const KeyT key)
     {
         return &(_map[bucketIndex(key)]);
     }
 
+    /**
+     * @param key
+     * @return the bucket the current key will be in.
+     */
     list<DictPair> *_bucket(const KeyT key) const
     {
         return &(_map[bucketIndex(key)]);
     }
 
+    /**
+     *
+     * @param key
+     * @return a pointer to the DictPair of the given key. nullptr if key not exist.
+     */
     DictPair *_tuplePointer(const KeyT key)
     {
         list<DictPair> *bucket = _bucket(key);
@@ -56,6 +120,11 @@ private:
         return nullptr;
     }
 
+    /**
+     *
+     * @param key
+     * @return a pointer to the DictPair of the given key. nullptr if key not exist.
+     */
     DictPair *_tuplePointer(const KeyT key) const
     {
         list<DictPair> *bucket = _bucket(key);
@@ -70,6 +139,10 @@ private:
         return nullptr;
     }
 
+    /**
+     * generates a new map and copies (rehashing) all elements to that map after increasing/decreasing map size.
+     * @param factor to increase/decrease the map by
+     */
     void _rehash(const double factor)
     {
         list<DictPair> *old = new list<DictPair>[_capacity];
@@ -93,6 +166,11 @@ private:
         delete[] old;
     }
 
+    /**
+     * copies the map of a given HashMap to a new map. Allocates new memory!
+     * @param other HashMap
+     * @return a pointer to the map copy
+     */
     list<DictPair> *_copyMap(const HashMap &other) const
     { // allocates heap memory!
         auto newMap = new list<DictPair>[other.capacity()];
@@ -106,12 +184,27 @@ private:
         return newMap;
     }
 
+    /**
+     * a functor to send to the delete_if method of std::list.
+     */
     struct KeyEquals
     {
+        /**
+         * the key to delete
+         */
         KeyT key;
+        /**
+         * KeyEquals constructor
+         * @param key
+         */
         explicit KeyEquals(KeyT key)
             : key(key)
         {}
+        /**
+         *
+         * @param tuple from bucket
+         * @return true if the key's tuple = this key. false otherwise.
+         */
         bool operator()(const DictPair &tuple)
         {
             return tuple.first == key;
@@ -119,8 +212,14 @@ private:
     };
 
 public:
+    /**
+     * Declaring the Iterator class of HashMap.
+     */
     class Iterator;
 
+    /**
+     * HashMap default constructor. Inits a new HashMap with _BASE_CAPACITY buckets. Allocates the copy map.
+     */
     HashMap()
         : _size(0), _capacity(_BASE_CAPACITY)
     {
@@ -128,12 +227,23 @@ public:
         _mapCopy = new list<DictPair>[_capacity];
     }
 
+    /**
+     * Copy constructor
+     * @param other HashMap
+     */
     HashMap(const HashMap &other)
         : _capacity(other.capacity()), _size(other.size())
     {
         _map = _copyMap(other);
+        _mapCopy = _copyMap(other);
     }
 
+    /**
+     * inits an HashMap from key vector and value vector. Must be in same size.
+     * @throws std::out_of_range if keyV and valV aren't of same size.
+     * @param keyV key vector
+     * @param valV value vector
+     */
     HashMap(const vector<KeyT> keyV, const vector<ValueT> valV)
         : HashMap()
     {
@@ -147,34 +257,57 @@ public:
         }
     }
 
+    /**
+     * deconstructor. deallocates the map and map copy heap memory.
+     */
     ~HashMap()
     {
         delete[] _map;
         delete[] _mapCopy;
         _map = nullptr;
+        _mapCopy = nullptr;
     }
 
+    /**
+     * @param key
+     * @return index of the bucket that should hold the key.
+     */
     int bucketIndex(const KeyT key) const
     {
         int hash = std::hash<KeyT>{}(key);
         return hash & (_capacity - 1);
     }
 
+    /**
+     * @return number of elements in HashMap
+     */
     int size() const
     {
         return _size;
     }
 
+    /**
+     * @return number of buckets in HashMap
+     */
     int capacity() const
     {
         return _capacity;
     }
 
+    /**
+     * @return true if HashMap has not elements, false otherwise.
+     */
     bool empty() const
     {
         return _capacity == 0;
     }
 
+    /**
+     * inserts a new value to hash map. won't override existing key's val.
+     * @param key of value
+     * @param val the value
+     * @return true if key wasn't in hash map, false otherwise.
+     */
     bool insert(const KeyT key, const ValueT val)
     {
         if (containsKey(key))
