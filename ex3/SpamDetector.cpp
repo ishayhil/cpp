@@ -14,12 +14,18 @@
 #define USAGE "Usage:  SpamDetector <database path> <message path> <threshold>"
 #define SPAM "SPAM"
 #define NOT_SPAM "NOT_SPAM"
+#define INVALID_INPUT "Invalid input"
 
 using std::vector;
 using std::cout;
 using std::string;
 using std::endl;
 
+void invalidInput()
+{
+    std::cout << INVALID_INPUT << std::endl;
+    exit(EXIT_FAILURE);
+}
 
 bool validStrInt(string score)
 {
@@ -59,10 +65,8 @@ void parseCsv(std::string &path, HashMap<string, int> &map)
 {
     if (!boost::filesystem::exists(path))
     {
-        cout << "file not exist" << endl;
-        exit(EXIT_FAILURE);
+        invalidInput();
     }
-
 
     std::ifstream ifstream(path);
     typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
@@ -80,8 +84,7 @@ void parseCsv(std::string &path, HashMap<string, int> &map)
         if (currentLine.empty())
         {
             ifstream.close();
-            cout << "invalid file" << endl;
-            exit(EXIT_FAILURE);
+            invalidInput();
         }
         std::vector<std::string> tokens;
         for (const auto &t: tok)
@@ -91,8 +94,7 @@ void parseCsv(std::string &path, HashMap<string, int> &map)
         if (!validVector(tokens))
         {
             ifstream.close();
-            cout << "invalid file" << endl;
-            exit(EXIT_FAILURE);
+            invalidInput();
         }
         else
         {
@@ -175,14 +177,12 @@ int main(int argc, char *args[])
     string strThreshold = extractInput(3, args);
     if (!validStrInt(strThreshold))
     {
-        std::cout << "Invalid input" << std::endl;
-        exit(EXIT_FAILURE);
+        invalidInput();
     }
     int threshold = std::stoi(strThreshold);
     if (threshold <= 0)
     {
-        std::cout << "Invalid input" << std::endl;
-        exit(EXIT_FAILURE);
+        invalidInput();
     }
     string csvPath = extractInput(1, args);
     string textPath = extractInput(2, args);
@@ -199,5 +199,6 @@ int main(int argc, char *args[])
     {
         cout << NOT_SPAM;
     }
+    cout << endl;
     return EXIT_SUCCESS;
 }

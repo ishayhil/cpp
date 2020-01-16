@@ -41,12 +41,12 @@ private:
     /**
      * amount of elements currently in hash map
      */
-    int _size;
+    int _size{};
 
     /**
      * amount of buckets in the hash map
      */
-    int _capacity;
+    int _capacity{};
 
     /**
      * lower load factor
@@ -238,24 +238,18 @@ public:
      * @param other HashMap
      */
     HashMap(const HashMap &other)
-    {
-        _map = _copyMap(other);
-        _mapCopy = _copyMap(other);
-        _capacity = other.capacity();
-        _size = other.size();
-    }
+        : _map(_copyMap(other)), _mapCopy(_copyMap(other)), _capacity(other.capacity()),
+          _size(other._size)
+    {}
 
     /**
      * move constructor
      * @param other HashMap
      */
     HashMap(const HashMap &&other) noexcept
-    {
-        _map = _copyMap(other);
-        _mapCopy = _copyMap(other);
-        _capacity = other.capacity();
-        _size = other.size();
-    }
+        : _map(_copyMap(other)), _mapCopy(_copyMap(other)), _capacity(other.capacity()),
+          _size(other._size)
+    {}
 
     /**
      * inits an HashMap from key vector and value vector. Must be in same size.
@@ -264,7 +258,6 @@ public:
      * @param valV value vector
      */
     HashMap(const vector<KeyT> keyV, const vector<ValueT> valV)
-        : HashMap()
     {
         if (keyV.size() != valV.size())
         {
@@ -489,6 +482,11 @@ public:
         return Iterator(_mapCopy, _capacity, ind);
     }
 
+    Iterator begin()
+    {
+        return cbegin();
+    }
+
     Iterator cend()
     {
         auto itr = Iterator(_mapCopy, _capacity, _capacity - 1);
@@ -497,6 +495,11 @@ public:
             itr.itr++;
         }
         return itr;
+    }
+
+    Iterator end()
+    {
+        return cend();
     }
 
 
@@ -564,4 +567,5 @@ public:
         }
     };
 };
+
 #endif //HASHMAP_HPP

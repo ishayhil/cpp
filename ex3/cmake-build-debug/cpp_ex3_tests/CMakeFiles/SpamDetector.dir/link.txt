@@ -1,0 +1,1 @@
+/Library/Developer/CommandLineTools/usr/bin/c++  -g -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/SpamDetector.dir/test_main.cpp.o CMakeFiles/SpamDetector.dir/hashMapTester.cpp.o  -o SpamDetector /usr/local/lib/libboost_filesystem.dylib 
