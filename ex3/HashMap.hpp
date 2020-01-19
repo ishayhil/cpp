@@ -77,6 +77,7 @@ struct LinkedList {
         }
         head = nullptr;
         tail = nullptr;
+        size = 0;
     }
 
     LinkedList &operator=(const LinkedList &other) {
@@ -213,12 +214,6 @@ private:
     LinkedList<KeyT, ValueT> *_map;
 
     /**
-     * a copy of _map field
-     */
-    LinkedList<KeyT, ValueT> *_mapCopy;
-
-
-    /**
      * @param key
      * @return the bucket the current key will be in.
      */
@@ -257,7 +252,7 @@ private:
      * @param key
      * @return a pointer to the DictPair of the given key. nullptr if key not exist.
      */
-    const DictPair *_tuplePointer(const KeyT key) const {
+    DictPair *_tuplePointer(const KeyT key) const {
         LinkedList<KeyT, ValueT> *bucket = _bucket(key);
 
         auto curr = bucket->head;
@@ -352,7 +347,6 @@ public:
             :
             _capacity(_BASE_CAPACITY), _size(0) {
         _map = new LinkedList<KeyT, ValueT>[_capacity];
-        _mapCopy = new LinkedList<KeyT, ValueT>[_capacity];
     }
 
     /**
@@ -361,7 +355,7 @@ public:
      */
     HashMap(const HashMap &other)
             : _capacity(other.capacity()),
-              _size(other._size), _map(_copyMap(other)), _mapCopy(_copyMap(other)) {}
+              _size(other._size), _map(_copyMap(other)) {}
 
     /**
      * move constructor
@@ -369,7 +363,7 @@ public:
      */
     HashMap(const HashMap &&other) noexcept
             : _capacity(other.capacity()),
-              _size(other._size), _map(_copyMap(other)), _mapCopy(_copyMap(other)) {}
+              _size(other._size), _map(_copyMap(other)) {}
 
     /**
      * inits an HashMap from key vector and value vector. Must be in same size.
@@ -391,9 +385,7 @@ public:
      */
     ~HashMap() {
         delete[] _map;
-        delete[] _mapCopy;
         _map = nullptr;
-        _mapCopy = nullptr;
     }
 
     /**
@@ -501,9 +493,8 @@ public:
         }
     }
 
-    HashMap &operator=(const HashMap other) { // todo handle copymap
+    HashMap &operator=(const HashMap other) {
         delete[] _map;
-//        delete[] _mapCopy;
         _map = _copyMap(other);
         _capacity = other.capacity();
         _size = other.size();
@@ -570,7 +561,7 @@ public:
 
     iterator end() const {
         auto iter = iterator(_map, _capacity, _capacity - 1);
-        for (int i = 0; i < _map[_capacity - 1].size; i++) {
+        for (int i = 0; i < _map[_capacity - 1].size - 1; i++) {
             iter++;
         }
         return iter;
@@ -607,7 +598,7 @@ public:
         }
 
         const self_type &operator++() {
-            if (currNode->next == NULL) {
+            if (currNode->next == nullptr) {
                 _handleIncrease();
             } else {
                 currNode = currNode->next;
@@ -617,7 +608,7 @@ public:
 
         const self_type &operator++(int) {
             auto old = this;
-            if (currNode->next == NULL) {
+            if (currNode->next == nullptr) {
                 _handleIncrease();
             } else {
                 currNode = currNode->next;
