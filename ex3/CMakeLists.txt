@@ -7,10 +7,12 @@ SET(CMAKE_CXX_FLAGS_DEBUG "-g")
 find_package(Boost COMPONENTS filesystem REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
-add_subdirectory(cpp_ex3_tests)
-add_executable(ex3 HashMap.hpp SpamDetector.cpp)
-target_link_libraries(ex3 ${Boost_LIBRARIES})
-target_compile_options(ex3 PRIVATE -Wall -Wextra -Werror -Wvla)
+#add_subdirectory(cpp_ex3_tests)
+add_executable(SpamDetector SpamDetector.cpp HashMap.hpp)
+target_link_libraries(SpamDetector ${Boost_LIBRARIES})
+target_compile_options(SpamDetector PRIVATE -Wall -Wextra -Werror -Wvla)
+
+add_subdirectory(tests)
 
 #
 #cmake_minimum_required(VERSION 3.12.3)

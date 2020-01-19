@@ -486,7 +486,6 @@ public:
     ValueT operator[](const KeyT key) const noexcept {
         DictPair *tuple = _tuplePointer(key);
         if (tuple == nullptr) {
-            insert(key, ValueT());
             return at(key);
         } else {
             return tuple->second;
@@ -571,6 +570,7 @@ public:
 public:
     class iterator {
     public:
+        typedef int difference_type;
         typedef iterator self_type;
         typedef DictPair value_type;
         typedef DictPair &reference;
@@ -597,6 +597,16 @@ public:
             return &(currNode->tuple);
         }
 
+        difference_type operator-(iterator &other) {
+            int cnt = 0;
+            iterator tmp = this;
+            while (tmp != other) {
+                tmp++;
+                cnt++;
+            }
+            return cnt;
+        }
+
         const self_type &operator++() {
             if (currNode->next == nullptr) {
                 _handleIncrease();
@@ -606,14 +616,14 @@ public:
             return *this;
         }
 
-        const self_type &operator++(int) {
-            auto old = this;
+        const self_type operator++(int) {
+            auto old = *this;
             if (currNode->next == nullptr) {
                 _handleIncrease();
             } else {
                 currNode = currNode->next;
             }
-            return *old;
+            return old;
         }
 
         bool operator!=(const iterator &other) const {
