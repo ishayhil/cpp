@@ -444,7 +444,6 @@ public:
     }
 
     int bucketSize(const KeyT key) const {
-        auto bucket = _bucket(key);
         if (!containsKey(key)) {
             throw std::out_of_range(KEY_NOT_FOUND);
         }
@@ -593,19 +592,19 @@ public:
             return currNode->tuple;
         }
 
-        const pointer operator->() const {
+        pointer operator->() const {
             return &(currNode->tuple);
         }
 
-        difference_type operator-(iterator &other) {
-            int cnt = 0;
-            iterator tmp = this;
-            while (tmp != other) {
-                tmp++;
-                cnt++;
-            }
-            return cnt;
-        }
+//        difference_type operator-(iterator &other) {
+//            int cnt = 0;
+//            iterator tmp = this;
+//            while (tmp != other) {
+//                tmp++;
+//                cnt++;
+//            }
+//            return cnt;
+//        }
 
         const self_type &operator++() {
             if (currNode->next == nullptr) {

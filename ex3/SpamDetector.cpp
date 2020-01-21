@@ -11,7 +11,7 @@
 #include "boost/tokenizer.hpp"
 #define COMMA_STR ","
 #define SPACE ' '
-#define USAGE "Usage:  SpamDetector <database path> <message path> <threshold>"
+#define USAGE "Usage: SpamDetector <database path> <message path> <threshold>"
 #define SPAM "SPAM"
 #define NOT_SPAM "NOT_SPAM"
 #define INVALID_INPUT "Invalid input"
@@ -21,10 +21,10 @@ using std::cout;
 using std::string;
 using std::endl;
 
-void invalidInput()
+void invalidInput(int code=EXIT_FAILURE)
 {
-    std::cout << INVALID_INPUT << std::endl;
-    exit(EXIT_FAILURE);
+    std::cerr << INVALID_INPUT << std::endl;
+    exit(code);
 }
 
 bool validStrInt(string score)
@@ -61,6 +61,16 @@ void lower(string &str)
     }
 }
 
+bool multiComma(string &str) {
+    int cnt = 0;
+    for (auto c: str) {
+        if (c == COMMA_STR[0]) {
+            cnt++;
+        }
+    }
+    return cnt != 1;
+}
+
 void parseCsv(std::string &path, HashMap<string, int> &map)
 {
     if (!boost::filesystem::exists(path))
@@ -81,7 +91,7 @@ void parseCsv(std::string &path, HashMap<string, int> &map)
     while (getline(ifstream, currentLine))
     { // in line
         tokenizer tok{currentLine, sep};
-        if (currentLine.empty())
+        if (currentLine.empty() || multiComma(currentLine))
         {
             ifstream.close();
             invalidInput();
@@ -131,6 +141,12 @@ string extractInput(int ind, char *args[])
 
 int calculateTextScore(string &path, HashMap<string, int> &map)
 {
+
+    if (!boost::filesystem::exists(path))
+    {
+        invalidInput();
+    }
+
     std::ifstream ifstream(path);
     if (ifstream.peek() == std::ifstream::traits_type::eof())
     { // empty file
@@ -143,14 +159,15 @@ int calculateTextScore(string &path, HashMap<string, int> &map)
     while (ifstream.peek() != EOF)
     {
         c = (char) ifstream.get();
-        if (c != '\n' && c != '\r')
-        {
-            strStream << (char) tolower(c);
-        }
-        else if (c == '\n')
-        {
-            strStream << SPACE;
-        }
+//        if (c != '\n' && c != '\r')
+//        {
+//            strStream << (char) tolower(c);
+//        }
+//        else if (c == '\n')
+//        {
+//            strStream << SPACE;
+//        }
+        strStream << (char) tolower(c);
     }
 
     string str = strStream.str();
@@ -171,7 +188,7 @@ int main(int argc, char *args[])
 {
     if (argc != 4)
     {
-        std::cout << USAGE << std::endl;
+        std::cerr << USAGE << std::endl;
         exit(EXIT_FAILURE);
     }
     string strThreshold = extractInput(3, args);
